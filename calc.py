@@ -6,7 +6,8 @@ from shapely.geometry import Point
 import matplotlib.pyplot as plt
 
 
-#彦根市で実装できるように書き換えaiu
+
+#彦根市で実装できるように書き換え
 class Calc:
     def __init__(
         self, pf_df_path, mesh_geometry_path, evacuation_sites_path, 
@@ -144,7 +145,7 @@ class Calc:
 
 if __name__ == "__main__":
     pf_df_path = "I:/マイドライブ/品川区/人流/monthly_mdp_mesh1km_13/13/{pf_year}/{pf_month}/monthly_mdp_mesh1km.csv"
-    mesh_geometry_path = "I:/マイドライブ/品川区/人流/SDDSWS5339/MESH05339.shp"
+    mesh_geometry_path = "G:/マイドライブ/akiyamalab/避難所/data/1kmメッシュ/彦根市3次メッシュ.parquet" #彦根市の三次メッシュにパスを変更
     evacuation_sites_path = "D:/work/品川区データPJファイル共有/避難所データ/processed/備蓄データ.parquet"
     city_ward_path = "D:/work/品川区データPJファイル共有/避難所データ/raw/city_polygon.parquet"
     output_path = "D:/work/品川区データPJファイル共有/避難所データ/processed/alpha_rice_shotage.parquet"

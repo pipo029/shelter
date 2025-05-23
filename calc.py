@@ -6,7 +6,7 @@ from shapely.geometry import Point
 import matplotlib.pyplot as plt
 
 
-#彦根市で実装できるように書き換え
+#彦根市で実装できるように書き換えaiu
 class Calc:
     def __init__(
         self, pf_df_path, mesh_geometry_path, evacuation_sites_path, 

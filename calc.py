@@ -67,7 +67,8 @@ class Calc:
         self.buffered_mesh["overlapArea"] = self.buffered_mesh.apply(
             lambda row: row.geometry.intersection(
                 self.evacuation_sites.loc[row["index_right"], "geometry"]).area, axis=1
-        )
+        ) #人流データと避難所データを空間結合したときに出力される，index_rightを用いて（基の避難所データのユニークなidとなる）
+          #避難所データの避難所ごとにバッファと1kmメッシュが重なる面積の算出
         
         # 施設ごとのバッファにかぶるメッシュの面積の合計を計算
         self.buffered_mesh["total_overlapArea_per_evacuation"] = (

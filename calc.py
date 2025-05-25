@@ -33,6 +33,7 @@ class Calc:
         self.pf_df.reset_index(drop=True, inplace=True)
         
         # 1kmメッシュデータの読み込み
+        self.mesh = self.mesh.format(pf_year=self.pf_year)
         self.mesh = gpd.read_file(self.mesh_geometry_path)
         self.mesh.to_crs(self.crs, inplace=True)
         
@@ -41,7 +42,10 @@ class Calc:
         self.pf_mesh_gdf = gpd.GeoDataFrame(self.pf_mesh_gdf, geometry="geometry")
         
         # 避難所データの読み込み
-        self.evacuation_sites = gpd.read_parquet(self.evacuation_sites_path)
+        self.evacuation_sites = gpd.read_csv(self.evacuation_sites_path)
+        # geometry列を作成（経度=lon, 緯度=lat の順番！）
+        self.evacuation_sites["geometry"] = [Point(lon, lat) for lat, lon in zip(df["緯度"], df["経度"])]
+        self.evacuation_sites = gpd.GeoDataFrame(self.evacuation_sites, geometry="geometry", crs="EPSG:4326")
         self.evacuation_sites.to_crs(self.crs, inplace=True)
         self.evacuation_sites["buffer_{self.buffer_distance}"] = self.evacuation_sites.geometry.buffer(self.buffer_distance)
         self.evacuation_sites["geometry"] = self.evacuation_sites["buffer_{self.buffer_distance}"]
@@ -67,8 +71,8 @@ class Calc:
         self.buffered_mesh["overlapArea"] = self.buffered_mesh.apply(
             lambda row: row.geometry.intersection(
                 self.evacuation_sites.loc[row["index_right"], "geometry"]).area, axis=1
-        ) #人流データと避難所データを空間結合したときに出力される，index_rightを用いて（基の避難所データのユニークなidとなる）
-          #避難所データの避難所ごとにバッファと1kmメッシュが重なる面積の算出
+        ) #人流データと避難所データを空間結合したときに出力される，index_rightが各避難所のユニークな値となる
+          # ここでのintersectionは、避難所のバッファと人流データのメッシュポリゴンの交差部分の面積を計算する。
         
         # 施設ごとのバッファにかぶるメッシュの面積の合計を計算
         self.buffered_mesh["total_overlapArea_per_evacuation"] = (
@@ -87,7 +91,7 @@ class Calc:
         
         # 各備蓄倉庫、避難所から各メッシュへの配分量を計算。100%放出する。
         self.buffered_mesh['assigned_alpha_rice'] = (
-            self.buffered_mesh['アルファ化米'] * self.buffered_mesh['initial_ratio']
+            self.buffered_mesh['アルファ米（食）'] * self.buffered_mesh['initial_ratio']
         )
         
         # 各メッシュごとに配分される量を計算
@@ -95,11 +99,12 @@ class Calc:
             self.buffered_mesh.groupby(
                 'mesh1kmid')['assigned_alpha_rice'].sum().reset_index()
         )
-        
+    
+    # 彦根市の1kmメッシュを抽出する
     def city_ward_overray(self):
         # 市区町村ポリゴンとself.resultの空間結合をして、品川区に含まれるメッシュを抽出
         self.shinagawa_surround = gpd.sjoin(
-            self.pf_mesh_gdf,
+            self.mesh_supply,
             self.city_ward,
             how="inner",
             predicate="intersects",
@@ -145,11 +150,11 @@ class Calc:
 
 
 if __name__ == "__main__":
-    pf_df_path = "I:/マイドライブ/品川区/人流/monthly_mdp_mesh1km_13/13/{pf_year}/{pf_month}/monthly_mdp_mesh1km.csv"
-    mesh_geometry_path = "G:/マイドライブ/akiyamalab/避難所/data/1kmメッシュ/彦根市3次メッシュ.parquet" #彦根市の三次メッシュにパスを変更
-    evacuation_sites_path = "D:/work/品川区データPJファイル共有/避難所データ/processed/備蓄データ.parquet"
-    city_ward_path = "D:/work/品川区データPJファイル共有/避難所データ/raw/city_polygon.parquet"
-    output_path = "D:/work/品川区データPJファイル共有/避難所データ/processed/alpha_rice_shotage.parquet"
+    pf_df_path = "G:/マイドライブ/akiyamalab/避難所/data/人流/monthly_mdp_mesh1km_25/25/{pf_year}/{pf_month}/monthly_mdp_mesh1km.csv"
+    mesh_geometry_path = "G:/マイドライブ/akiyamalab/避難所/data/1kmメッシュ/attribute_mesh1km_{pf_year}.parquet" #彦根市の三次メッシュにパスを変更
+    evacuation_sites_path = "G:/マイドライブ/akiyamalab/避難所/data/彦根市備蓄品データ/saigai_bichiku_list_20250331.csv"
+    city_ward_path = "G:/マイドライブ/akiyamalab/避難所/data/市区町村境界/Esri_市区町村境界/japan_ver84.shp"
+    output_path = "G:/マイドライブ/akiyamalab/避難所/devprocessed/alpha_rice_shotage.parquet"
     buffer_distance = 500
     crs = 6677
     pf_year =  '2019'
